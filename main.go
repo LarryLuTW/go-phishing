@@ -58,6 +58,12 @@ func cloneRequest(r *http.Request) *http.Request {
 	req.Header.Set("Origin", origin)
 	req.Header.Set("Referer", referer)
 
+	for i, value := range req.Header["Cookie"] {
+		newValue := strings.Replace(value, "XXHost", "__Host", -1)
+		newValue = strings.Replace(newValue, "XXSecure", "__Secure", -1)
+		req.Header["Cookie"][i] = newValue
+	}
+
 	return req
 }
 
@@ -90,6 +96,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	for _, v := range header["Set-Cookie"] {
 		newValue := strings.Replace(v, "domain=.github.com;", "", -1)
 		newValue = strings.Replace(newValue, "secure;", "", 1)
+		newValue = strings.Replace(newValue, "__Host", "XXHost", -1)
+		newValue = strings.Replace(newValue, "__Secure", "XXSecure", -1)
 
 		w.Header().Add("Set-Cookie", newValue)
 	}
