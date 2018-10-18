@@ -49,6 +49,9 @@ func cloneRequest(r *http.Request) *http.Request {
 	if err != nil {
 		panic(err)
 	}
+
+	req.Header["Cookie"] = r.Header["Cookie"]
+
 	return req
 }
 
@@ -74,6 +77,13 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 	body, header := sendReqToUpstream(req)
 	body = replaceURLInResp(body, header)
+
+	for _, v := range header["Set-Cookie"] {
+		newValue := strings.Replace(v, "domain=.github.com;", "", -1)
+		newValue = strings.Replace(newValue, "secure;", "", 1)
+
+		w.Header().Add("Set-Cookie", newValue)
+	}
 
 	w.Write(body)
 }
