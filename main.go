@@ -94,6 +94,20 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Set-Cookie", newValue)
 	}
 
+	for k := range header {
+		if k != "Set-Cookie" {
+			value := header.Get(k)
+			w.Header().Set(k, value)
+		}
+	}
+
+	w.Header().Del("Content-Security-Policy")
+	w.Header().Del("Strict-Transport-Security")
+	w.Header().Del("X-Frame-Options")
+	w.Header().Del("X-Xss-Protection")
+	w.Header().Del("X-Pjax-Version")
+	w.Header().Del("X-Pjax-Url")
+
 	// status code is 3XX
 	if statusCode >= 300 && statusCode < 400 {
 		location := header.Get("Location")
