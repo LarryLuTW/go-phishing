@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+
+	"go-phishing/db"
 )
 
 const (
@@ -128,6 +130,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	db.Connect()
+
 	http.HandleFunc("/", handler)
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
