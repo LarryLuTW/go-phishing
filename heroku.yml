@@ -1,0 +1,6 @@
+# heroku git:remote -a go-phishing
+# heroku stack:set container
+# git push heroku master
+build:
+  docker:
+    web: Dockerfile
